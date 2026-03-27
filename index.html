@@ -796,6 +796,7 @@ tr:last-child td { border-bottom:none; }
     <div class="topbar-right">
       <button class="icon-btn" onclick="syncSheets()" title="동기화">↻ 동기화</button>
       <button class="icon-btn" onclick="openConfig()">⚙</button>
+      <button class="icon-btn" onclick="handleLogout()" title="로그아웃">⏻</button>
       <div class="user-chip">
         <div class="user-avatar" id="user-avatar">U</div>
         <span class="user-name" id="user-name">사용자</span>
@@ -1107,8 +1108,8 @@ function saveConfig() {
 
 // ── AUTH ──────────────────────────────────────────
 let tokenClient;
-let accessToken = null;
-let currentUser = null;
+let accessToken = localStorage.getItem('crm-token') || null;
+let currentUser = JSON.parse(localStorage.getItem('crm-user') || 'null');
 
 function initGoogleAuth() {
   if (!CONFIG.CLIENT_ID) return;
@@ -1123,6 +1124,7 @@ function initGoogleAuth() {
     callback: (resp) => {
       if (resp.error) { showToast('❌ 로그인 실패: ' + resp.error); return; }
       accessToken = resp.access_token;
+      localStorage.setItem('crm-token', accessToken);
       fetchUserInfo();
     }
   });
@@ -1144,6 +1146,7 @@ async function fetchUserInfo() {
   currentUser = await res.json();
   document.getElementById('user-name').textContent = currentUser.given_name || currentUser.name || '사용자';
   document.getElementById('user-avatar').textContent = (currentUser.name || 'U')[0].toUpperCase();
+  localStorage.setItem('crm-user', JSON.stringify(currentUser));
   document.getElementById('login-screen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   await loadLeadsFromSheets();
@@ -1716,12 +1719,31 @@ function showToast(msg) {
 }
 
 // ── INIT ──────────────────────────────────────────
-window.addEventListener('load', () => {
+function handleLogout() {
+  accessToken = null;
+  currentUser = null;
+  localStorage.removeItem('crm-token');
+  localStorage.removeItem('crm-user');
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('app').classList.add('hidden');
+  showToast('👋 로그아웃되었습니다.');
+}
+
+window.addEventListener('load', async () => {
   loadConfig();
   initGoogleAuth();
-  // 오프라인 데이터 복원 (설정 전 미리보기용)
   const offline = localStorage.getItem('crm-leads-offline');
   if (offline) leads = JSON.parse(offline);
+  // 저장된 토큰으로 자동 로그인
+  if (accessToken && currentUser) {
+    document.getElementById('user-name').textContent = currentUser.given_name || currentUser.name || '사용자';
+    document.getElementById('user-avatar').textContent = (currentUser.name || 'U')[0].toUpperCase();
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    await loadLeadsFromSheets();
+    renderAll();
+    initMap();
+  }
 });
 </script>
 
