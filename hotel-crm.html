@@ -1092,9 +1092,9 @@ function closeConfig() {
   document.getElementById('config-modal').classList.add('hidden');
 }
 function saveConfig() {
-  CONFIG.CLIENT_ID = document.getElementById('cfg-client-id').value.trim();
-  CONFIG.SHEET_ID = document.getElementById('cfg-sheet-id').value.trim();
-  CONFIG.MAPS_KEY = document.getElementById('cfg-maps-key').value.trim();
+  CONFIG.CLIENT_ID = document.getElementById('cfg-client-id').value.trim().replace(/^'+|'+$/g, '');
+  CONFIG.SHEET_ID = document.getElementById('cfg-sheet-id').value.trim().replace(/^'+|'+$/g, '');
+  CONFIG.MAPS_KEY = document.getElementById('cfg-maps-key').value.trim().replace(/^'+|'+$/g, '');
   localStorage.setItem('crm-config', JSON.stringify(CONFIG));
   if (CONFIG.CLIENT_ID && CONFIG.SHEET_ID && CONFIG.MAPS_KEY) {
     document.getElementById('config-banner').classList.add('hidden');
